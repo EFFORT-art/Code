@@ -4,6 +4,24 @@
 #include<sys/socket.h>
 #include<netinet/in.h>
 #include <string.h>
+#include<pthread.h>
+#include<ctype.h>
+
+void* handle_client(void* args)
+{
+	int conn_fd=*(int*)args;
+	free(args);
+	 while(1){
+          char buf[100];
+          int n=read(conn_fd,buf,sizeof(buf)-1);
+          buf[n]='\0';
+          for (int i = 0; i < n; i++) {
+              buf[i] = toupper(buf[i]);
+          }
+ 
+          write(conn_fd,buf, n);
+          }
+}
 
 int main()
 {
@@ -18,15 +36,12 @@ int main()
 	bind(listen_fd,(struct sockaddr*)&addr,sizeof(addr));
 	listen(listen_fd,10);
 		
-	while(1){
-	int conn_fd=accept(listen_fd,NULL,NULL);
-	char *http_resp = 
-  	  "HTTP/1.1 200 OK\r\n"
-    	"Content-Type: text/plain\r\n"
-    	"Content-Length: 5\r\n"
-    	"\r\n"
-    	"hello";
-	write(conn_fd, http_resp, strlen(http_resp));
-	close(conn_fd);
-	}
+	while(1)
+	{
+	int *p=malloc(sizeof(int));
+	*p=accept(listen_fd,NULL,NULL);
+	pthread_t tid;
+	pthread_create(&tid,NULL,handle_client,p);
+	pthread_detach(tid);
+      	}
 }
